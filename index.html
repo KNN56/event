@@ -485,8 +485,8 @@
     }catch(e){
       activeActivity = null;
       banner.className = 'activity-box empty';
-      banner.innerHTML = `<h2>ไม่สามารถโหลดข้อมูลกิจกรรมได้</h2>
-        <p style="margin:6px 0 0;font-size:13px;">โปรดตรวจสอบการเชื่อมต่อ Supabase</p>`;
+      banner.innerHTML = `<h2>ในขณะนี้ยังไม่มีกิจกรรม</h2>
+        <p style="margin:6px 0 0;font-size:13px;">โปรดติดตามกิจกรรมผ่านทางสโมสรนิสิต</p>`;
       return;
     }
     renderActivityBanner();
