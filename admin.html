@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบจัดการกิจกรรม | คณะนิติศาสตร์ มหาวิทยาลัยบูรพา</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&family=Noto+Serif+Thai:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --navy:#1B2A4A;
+    --navy-dark:#0E1830;
+    --navy-soft:#2C4373;
+    --gold:#C9A227;
+    --gold-soft:#E7CE7C;
+    --paper:#FBFAF7;
+    --bg:#F1F2F6;
+    --ink:#1A1A2E;
+    --muted:#6B7280;
+    --line:#E4E2DA;
+    --success:#1E7145;
+    --success-bg:#EAF5EE;
+    --warn:#A9690A;
+    --warn-bg:#FCF1E1;
+    --danger:#B3261E;
+    --danger-bg:#FBEAE9;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Noto Sans Thai', sans-serif;
+    color:var(--ink);
+    background:var(--bg);
+    min-height:100vh;
+  }
+
+  /* ---------------- Login ---------------- */
+  .login-wrap{
+    min-height:100vh;
+    display:flex; align-items:center; justify-content:center;
+    background:
+      radial-gradient(1200px 800px at 85% -10%, rgba(201,162,39,0.10), transparent 60%),
+      linear-gradient(160deg, var(--navy-dark) 0%, var(--navy) 55%, var(--navy-soft) 100%);
+    padding:20px;
+  }
+  .login-card{
+    background:var(--paper);
+    border-radius:18px;
+    width:100%;
+    max-width:380px;
+    padding:30px 26px;
+    box-shadow:0 24px 60px -20px rgba(8,16,36,0.55);
+    text-align:center;
+  }
+  .login-card .seal{
+    width:60px;height:60px;margin:0 auto 14px;
+    border:1.5px solid var(--gold);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--gold);
+  }
+  .login-card .seal svg{ width:30px;height:30px; }
+  .login-card h1{
+    font-family:'Noto Serif Thai', serif;
+    font-size:19px; margin:0 0 4px; color:var(--navy);
+  }
+  .login-card p{ margin:0 0 18px; font-size:13px; color:var(--muted); }
+  .login-card input{
+    width:100%; font-size:16px; padding:12px 14px;
+    border:1.5px solid var(--line); border-radius:10px;
+    margin-bottom:12px; text-align:center;
+  }
+  .login-card input:focus{ outline:none; border-color:var(--navy); }
+  .login-card button{
+    width:100%; padding:12px; border:none; border-radius:10px;
+    background:var(--navy); color:#fff; font-weight:700; font-size:15px;
+    cursor:pointer;
+  }
+  .login-card button:hover{ background:var(--navy-soft); }
+  .login-error{ color:var(--danger); font-size:12.5px; min-height:16px; margin-bottom:6px; }
+
+  /* ---------------- App shell ---------------- */
+  .app{ display:none; }
+  .app.show{ display:block; }
+
+  .topbar{
+    background:linear-gradient(135deg, var(--navy-dark), var(--navy));
+    color:#fff;
+    padding:18px 22px;
+    display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:10px;
+  }
+  .topbar .brand{ display:flex; align-items:center; gap:12px; }
+  .topbar .brand .seal{
+    width:42px;height:42px;border:1.5px solid var(--gold-soft);border-radius:50%;
+    display:flex;align-items:center;justify-content:center;color:var(--gold-soft);
+    flex-shrink:0;
+  }
+  .topbar .brand .seal svg{ width:22px;height:22px; }
+  .topbar .brand h1{
+    font-family:'Noto Serif Thai', serif; font-size:16px; margin:0;
+  }
+  .topbar .brand p{ margin:0; font-size:12px; color:rgba(255,255,255,0.7); }
+  .topbar .logout{
+    background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.25);
+    border-radius:8px; padding:8px 14px; font-size:13px; cursor:pointer;
+  }
+  .topbar .logout:hover{ background:rgba(255,255,255,0.16); }
+
+  .tabs{
+    display:flex; gap:6px; padding:14px 22px 0;
+    max-width:1000px; margin:0 auto; flex-wrap:wrap;
+  }
+  .tab-btn{
+    border:none; background:#fff; color:var(--muted);
+    padding:10px 18px; border-radius:10px 10px 0 0; font-size:14px; font-weight:600;
+    cursor:pointer; border:1px solid var(--line); border-bottom:none;
+    transform:translateY(1px);
+  }
+  .tab-btn.active{ color:var(--navy); background:var(--paper); border-color:var(--line); transform:translateY(0); }
+
+  .content{
+    max-width:1000px; margin:0 auto; padding:0 22px 60px;
+  }
+  .panel{
+    background:var(--paper); border:1px solid var(--line); border-radius:0 12px 12px 12px;
+    padding:24px; display:none;
+  }
+  .panel.active{ display:block; }
+
+  h2.section-title{
+    font-family:'Noto Serif Thai', serif; font-size:18px; color:var(--navy); margin:0 0 4px;
+  }
+  .section-sub{ font-size:13px; color:var(--muted); margin:0 0 18px; }
+
+  /* form grid */
+  .form-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px;
+  }
+  .form-grid .full{ grid-column:1 / -1; }
+  .form-grid label{ font-size:12.5px; font-weight:700; color:var(--navy); display:block; margin-bottom:4px; }
+  .form-grid input, .form-grid textarea{
+    width:100%; font-family:inherit; font-size:14px;
+    border:1.5px solid var(--line); border-radius:10px; padding:10px 12px;
+    background:#fff;
+  }
+  .form-grid input:focus, .form-grid textarea:focus{ outline:none; border-color:var(--navy); }
+  .form-grid textarea{ resize:vertical; min-height:60px; }
+  @media (max-width:560px){ .form-grid{ grid-template-columns:1fr; } }
+
+  .btn{
+    border:none; border-radius:10px; padding:11px 18px; font-size:14px; font-weight:700;
+    cursor:pointer; transition:background .15s;
+  }
+  .btn-primary{ background:var(--navy); color:#fff; }
+  .btn-primary:hover{ background:var(--navy-soft); }
+  .btn-outline{ background:#fff; color:var(--navy); border:1.5px solid var(--navy); }
+  .btn-outline:hover{ background:#EFF2F8; }
+  .btn-danger{ background:var(--danger-bg); color:var(--danger); border:1.5px solid #F2C9C7; }
+  .btn-danger:hover{ background:#F8DEDD; }
+  .btn-sm{ padding:7px 12px; font-size:12.5px; border-radius:8px; }
+  .btn:disabled{ opacity:.6; cursor:default; }
+
+  /* activity list */
+  .activity-card{
+    border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:10px;
+    display:flex; justify-content:space-between; gap:12px; align-items:flex-start; flex-wrap:wrap;
+    background:#fff;
+  }
+  .activity-card.is-active{ border-color:var(--gold); background:#FFFBF0; }
+  .activity-card .info h3{
+    font-family:'Noto Serif Thai', serif; font-size:15px; margin:0 0 4px; color:var(--navy);
+  }
+  .activity-card .info p{ margin:2px 0; font-size:13px; color:var(--muted); }
+  .activity-card .badge{
+    display:inline-block; font-size:11px; font-weight:700; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--gold); border:1px solid var(--gold);
+    border-radius:999px; padding:2px 10px; margin-bottom:6px;
+  }
+  .activity-card .actions{ display:flex; gap:8px; flex-wrap:wrap; }
+
+  /* stats */
+  .stats-row{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:18px; }
+  .select-wrap select{
+    font-family:inherit; font-size:14px; padding:10px 14px; border:1.5px solid var(--line);
+    border-radius:10px; background:#fff; min-width:240px;
+  }
+  .stat-cards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:12px; margin-bottom:20px; }
+  .stat-card{
+    border:1px solid var(--line); border-radius:12px; padding:16px; text-align:center; background:#fff;
+  }
+  .stat-card .num{ font-size:26px; font-weight:700; color:var(--navy); font-family:'Noto Serif Thai', serif; }
+  .stat-card .label{ font-size:12.5px; color:var(--muted); margin-top:4px; }
+
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; background:#fff; border-radius:10px; overflow:hidden; }
+  table th, table td{ padding:9px 12px; border-bottom:1px solid var(--line); text-align:left; }
+  table th{ background:#F5F6FA; color:var(--navy); font-weight:700; font-size:12.5px; text-transform:uppercase; letter-spacing:.04em; }
+  table tbody tr:hover{ background:#FAFAF8; }
+  .table-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius:10px; }
+
+  .empty-note{ color:var(--muted); font-size:13.5px; text-align:center; padding:24px 0; }
+
+  .toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--navy); color:#fff; padding:11px 20px; border-radius:10px; font-size:13.5px;
+    opacity:0; transition:opacity .2s, transform .2s; z-index:60; box-shadow:0 10px 30px -10px rgba(0,0,0,.4);
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast.error{ background:var(--danger); }
+
+  .settings-box{ max-width:360px; }
+</style>
+</head>
+<body>
+
+  <!-- Login -->
+  <div class="login-wrap" id="login-wrap">
+    <div class="login-card">
+      <div class="seal" aria-hidden="true">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M32 6V52" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M32 12L12 16M32 12L52 16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M12 16L6 28C6 31 9 33 12 33C15 33 18 31 18 28L12 16Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+          <path d="M52 16L46 28C46 31 49 33 52 33C55 33 58 31 58 28L52 16Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+          <path d="M22 56H42" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M32 52V56" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="32" cy="9" r="2.4" fill="currentColor"/>
+        </svg>
+      </div>
+      <h1>ระบบจัดการกิจกรรม</h1>
+      <p>คณะนิติศาสตร์ มหาวิทยาลัยบูรพา</p>
+      <div class="login-error" id="login-error"></div>
+      <input type="password" id="login-password" placeholder="รหัสผ่านผู้ดูแลระบบ" autocomplete="off">
+      <button id="login-btn">เข้าสู่ระบบ</button>
+    </div>
+  </div>
+
+  <!-- App -->
+  <div class="app" id="app">
+    <div class="topbar">
+      <div class="brand">
+        <div class="seal" aria-hidden="true">
+          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M32 6V52" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M32 12L12 16M32 12L52 16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M12 16L6 28C6 31 9 33 12 33C15 33 18 31 18 28L12 16Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+            <path d="M52 16L46 28C46 31 49 33 52 33C55 33 58 31 58 28L52 16Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+            <path d="M22 56H42" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M32 52V56" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="32" cy="9" r="2.4" fill="currentColor"/>
+          </svg>
+        </div>
+        <div>
+          <h1>ระบบจัดการกิจกรรม</h1>
+          <p>คณะนิติศาสตร์ มหาวิทยาลัยบูรพา</p>
+        </div>
+      </div>
+      <button class="logout" id="logout-btn">ออกจากระบบ</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="activities">จัดการกิจกรรม</button>
+      <button class="tab-btn" data-tab="stats">สถิติผู้เข้าร่วม</button>
+      <button class="tab-btn" data-tab="settings">ตั้งค่า</button>
+    </div>
+
+    <div class="content">
+
+      <!-- Activities panel -->
+      <div class="panel active" id="panel-activities">
+        <h2 class="section-title">เพิ่มกิจกรรมใหม่</h2>
+        <p class="section-sub">กิจกรรมที่ตั้งเป็น "กิจกรรมปัจจุบัน" จะเป็นกิจกรรมเดียวที่หน้าเช็คชื่อนิสิตใช้งานอยู่</p>
+        <form id="activity-form">
+          <div class="form-grid">
+            <div class="full">
+              <label>ชื่อกิจกรรม</label>
+              <input type="text" id="f-name" required placeholder="เช่น ปฐมนิเทศนิสิตใหม่ คณะนิติศาสตร์">
+            </div>
+            <div class="full">
+              <label>รายละเอียด (ถ้ามี)</label>
+              <textarea id="f-desc" placeholder="รายละเอียดเพิ่มเติมของกิจกรรม"></textarea>
+            </div>
+            <div>
+              <label>วันที่จัดกิจกรรม</label>
+              <input type="date" id="f-date">
+            </div>
+            <div>
+              <label>เวลา</label>
+              <input type="text" id="f-time" placeholder="เช่น 09:00 - 12:00 น.">
+            </div>
+            <div class="full">
+              <label>สถานที่</label>
+              <input type="text" id="f-location" placeholder="เช่น หอประชุมธำรง บัวศรี">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">เพิ่มกิจกรรม</button>
+        </form>
+
+        <h2 class="section-title" style="margin-top:28px;">รายการกิจกรรมทั้งหมด</h2>
+        <p class="section-sub">กดปุ่ม "ตั้งเป็นกิจกรรมปัจจุบัน" เพื่อเปลี่ยนกิจกรรมที่เปิดให้เช็คชื่อ</p>
+        <div id="activity-list"></div>
+      </div>
+
+      <!-- Stats panel -->
+      <div class="panel" id="panel-stats">
+        <h2 class="section-title">สถิติผู้เข้าร่วมกิจกรรม</h2>
+        <p class="section-sub">เลือกกิจกรรมเพื่อดูจำนวนผู้เข้าร่วม แยกตามชั้นปี</p>
+        <div class="stats-row">
+          <div class="select-wrap">
+            <select id="stats-activity-select"></select>
+          </div>
+          <button class="btn btn-outline btn-sm" id="export-csv">ดาวน์โหลดรายชื่อ (CSV)</button>
+        </div>
+
+        <div class="stat-cards" id="stat-cards"></div>
+
+        <h2 class="section-title" style="font-size:15px;">รายชื่อผู้เช็คชื่อ</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>ลำดับ</th><th>รหัสนิสิต</th><th>ชั้นปี</th><th>วันเวลาที่เช็คชื่อ</th></tr>
+            </thead>
+            <tbody id="checkins-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Settings panel -->
+      <div class="panel" id="panel-settings">
+        <h2 class="section-title">ตั้งค่าระบบ</h2>
+        <p class="section-sub">ใช้สำหรับคำนวณ "ชั้นปี" ของนิสิตจากรหัสนิสิต (2 หลักแรกของรหัส = ปีที่เข้าศึกษา พ.ศ.)</p>
+        <div class="settings-box">
+          <div class="form-grid">
+            <div class="full">
+              <label>ปีการศึกษาปัจจุบัน (พ.ศ.)</label>
+              <input type="number" id="f-academic-year" placeholder="เช่น 2569">
+            </div>
+          </div>
+          <button class="btn btn-primary" id="save-settings">บันทึกการตั้งค่า</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+  /* =========================================================
+     ตั้งค่า Supabase และรหัสผ่านผู้ดูแลระบบ
+     - ใส่ Project URL และ anon public key จากโปรเจกต์ Supabase
+     - เปลี่ยน ADMIN_PASSWORD เป็นรหัสผ่านของคณะ
+     หมายเหตุ: การตรวจรหัสผ่านนี้ทำฝั่งเบราว์เซอร์เท่านั้น เหมาะสำหรับ
+     ป้องกันการเข้าถึงทั่วไป ไม่ใช่ระบบความปลอดภัยระดับสูง
+  ========================================================= */
+  const SUPABASE_URL = "YOUR_SUPABASE_URL";
+  const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+  const ADMIN_PASSWORD = "lawburapha2569";
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  /* ---------- Login ---------- */
+  const loginWrap = document.getElementById('login-wrap');
+  const app = document.getElementById('app');
+  const loginBtn = document.getElementById('login-btn');
+  const loginPassword = document.getElementById('login-password');
+  const loginError = document.getElementById('login-error');
+
+  loginBtn.addEventListener('click', tryLogin);
+  loginPassword.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') tryLogin(); });
+
+  function tryLogin(){
+    if(loginPassword.value === ADMIN_PASSWORD){
+      loginWrap.style.display = 'none';
+      app.classList.add('show');
+      initApp();
+    } else {
+      loginError.textContent = 'รหัสผ่านไม่ถูกต้อง';
+    }
+  }
+
+  document.getElementById('logout-btn').addEventListener('click', ()=>{
+    app.classList.remove('show');
+    loginWrap.style.display = 'flex';
+    loginPassword.value = '';
+    loginError.textContent = '';
+  });
+
+  /* ---------- Tabs ---------- */
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+      if(btn.dataset.tab === 'stats') loadStats();
+    });
+  });
+
+  /* ---------- Toast ---------- */
+  const toast = document.getElementById('toast');
+  function showToast(msg, isError){
+    toast.textContent = msg;
+    toast.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(()=>{ toast.classList.remove('show'); }, 2600);
+  }
+
+  function escapeHtml(str){
+    if(str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  }
+
+  function formatDateThai(dateStr){
+    if(!dateStr) return '-';
+    try{
+      const d = new Date(dateStr + 'T00:00:00');
+      return d.toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' });
+    }catch(e){ return dateStr; }
+  }
+
+  function formatDateTimeThai(ts){
+    try{
+      const d = new Date(ts);
+      return d.toLocaleString('th-TH', { dateStyle:'medium', timeStyle:'short' });
+    }catch(e){ return ts; }
+  }
+
+  /* ---------- Activities ---------- */
+  let activitiesCache = [];
+
+  async function loadActivities(){
+    const { data, error } = await sb.from('activities').select('*').order('created_at', { ascending:false });
+    if(error){ showToast('โหลดข้อมูลกิจกรรมไม่สำเร็จ', true); return; }
+    activitiesCache = data || [];
+    renderActivityList();
+    populateStatsSelect();
+  }
+
+  function renderActivityList(){
+    const list = document.getElementById('activity-list');
+    if(activitiesCache.length === 0){
+      list.innerHTML = '<div class="empty-note">ยังไม่มีกิจกรรมในระบบ</div>';
+      return;
+    }
+    list.innerHTML = activitiesCache.map(a => `
+      <div class="activity-card ${a.is_active ? 'is-active' : ''}">
+        <div class="info">
+          ${a.is_active ? '<span class="badge">กิจกรรมปัจจุบัน</span>' : ''}
+          <h3>${escapeHtml(a.name)}</h3>
+          ${a.description ? `<p>${escapeHtml(a.description)}</p>` : ''}
+          <p>วันที่: ${formatDateThai(a.event_date)} ${a.event_time ? '&middot; เวลา: ' + escapeHtml(a.event_time) : ''}</p>
+          ${a.location ? `<p>สถานที่: ${escapeHtml(a.location)}</p>` : ''}
+        </div>
+        <div class="actions">
+          ${!a.is_active ? `<button class="btn btn-outline btn-sm" data-action="activate" data-id="${a.id}">ตั้งเป็นกิจกรรมปัจจุบัน</button>` : `<button class="btn btn-outline btn-sm" data-action="deactivate" data-id="${a.id}">ปิดการเช็คชื่อ</button>`}
+          <button class="btn btn-danger btn-sm" data-action="delete" data-id="${a.id}">ลบ</button>
+        </div>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('button[data-action]').forEach(btn=>{
+      btn.addEventListener('click', ()=> handleActivityAction(btn.dataset.action, btn.dataset.id));
+    });
+  }
+
+  async function handleActivityAction(action, id){
+    if(action === 'activate'){
+      const { error: e1 } = await sb.from('activities').update({ is_active:false }).eq('is_active', true);
+      if(e1){ showToast('เกิดข้อผิดพลาด', true); return; }
+      const { error: e2 } = await sb.from('activities').update({ is_active:true }).eq('id', id);
+      if(e2){ showToast('เกิดข้อผิดพลาด', true); return; }
+      showToast('ตั้งเป็นกิจกรรมปัจจุบันแล้ว');
+    }
+    if(action === 'deactivate'){
+      const { error } = await sb.from('activities').update({ is_active:false }).eq('id', id);
+      if(error){ showToast('เกิดข้อผิดพลาด', true); return; }
+      showToast('ปิดการเช็คชื่อกิจกรรมนี้แล้ว');
+    }
+    if(action === 'delete'){
+      if(!confirm('ยืนยันการลบกิจกรรมนี้? ข้อมูลการเช็คชื่อของกิจกรรมนี้จะถูกลบทั้งหมด')) return;
+      const { error } = await sb.from('activities').delete().eq('id', id);
+      if(error){ showToast('เกิดข้อผิดพลาด', true); return; }
+      showToast('ลบกิจกรรมแล้ว');
+    }
+    await loadActivities();
+  }
+
+  document.getElementById('activity-form').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const name = document.getElementById('f-name').value.trim();
+    const desc = document.getElementById('f-desc').value.trim();
+    const date = document.getElementById('f-date').value || null;
+    const time = document.getElementById('f-time').value.trim();
+    const location = document.getElementById('f-location').value.trim();
+
+    if(!name){ showToast('กรุณากรอกชื่อกิจกรรม', true); return; }
+
+    const { error } = await sb.from('activities').insert({
+      name, description: desc || null, event_date: date, event_time: time || null, location: location || null, is_active:false
+    });
+    if(error){ showToast('เพิ่มกิจกรรมไม่สำเร็จ', true); return; }
+
+    e.target.reset();
+    showToast('เพิ่มกิจกรรมแล้ว');
+    await loadActivities();
+  });
+
+  /* ---------- Stats ---------- */
+  function populateStatsSelect(){
+    const sel = document.getElementById('stats-activity-select');
+    if(activitiesCache.length === 0){
+      sel.innerHTML = '<option value="">ไม่มีกิจกรรม</option>';
+      return;
+    }
+    sel.innerHTML = activitiesCache.map(a =>
+      `<option value="${a.id}">${escapeHtml(a.name)}${a.is_active ? ' (ปัจจุบัน)' : ''}</option>`
+    ).join('');
+    const activeOne = activitiesCache.find(a => a.is_active);
+    if(activeOne) sel.value = activeOne.id;
+  }
+
+  document.getElementById('stats-activity-select').addEventListener('change', loadStats);
+
+  let lastCheckins = [];
+  let lastActivity = null;
+
+  async function loadStats(){
+    const sel = document.getElementById('stats-activity-select');
+    const cards = document.getElementById('stat-cards');
+    const tbody = document.getElementById('checkins-tbody');
+
+    if(activitiesCache.length === 0){
+      await loadActivities();
+    }
+    const activityId = sel.value;
+    if(!activityId){
+      cards.innerHTML = '<div class="empty-note" style="grid-column:1/-1;">ยังไม่มีกิจกรรมในระบบ</div>';
+      tbody.innerHTML = '';
+      return;
+    }
+
+    lastActivity = activitiesCache.find(a => a.id === activityId);
+
+    const { data, error } = await sb
+      .from('checkins')
+      .select('*')
+      .eq('activity_id', activityId)
+      .order('created_at', { ascending:true });
+
+    if(error){ showToast('โหลดสถิติไม่สำเร็จ', true); return; }
+    lastCheckins = data || [];
+
+    // breakdown by year
+    const counts = { 1:0, 2:0, 3:0, 4:0, other:0 };
+    lastCheckins.forEach(c=>{
+      const y = c.year_level;
+      if(y >= 1 && y <= 4) counts[y]++;
+      else counts.other++;
+    });
+
+    cards.innerHTML = `
+      <div class="stat-card"><div class="num">${lastCheckins.length}</div><div class="label">ผู้เข้าร่วมทั้งหมด</div></div>
+      <div class="stat-card"><div class="num">${counts[1]}</div><div class="label">ชั้นปี 1</div></div>
+      <div class="stat-card"><div class="num">${counts[2]}</div><div class="label">ชั้นปี 2</div></div>
+      <div class="stat-card"><div class="num">${counts[3]}</div><div class="label">ชั้นปี 3</div></div>
+      <div class="stat-card"><div class="num">${counts[4]}</div><div class="label">ชั้นปี 4</div></div>
+      <div class="stat-card"><div class="num">${counts.other}</div><div class="label">อื่น ๆ / ไม่ระบุ</div></div>
+    `;
+
+    if(lastCheckins.length === 0){
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-note">ยังไม่มีผู้เช็คชื่อกิจกรรมนี้</td></tr>';
+    } else {
+      tbody.innerHTML = lastCheckins.map((c,i)=> `
+        <tr>
+          <td>${i+1}</td>
+          <td>${escapeHtml(c.student_id)}</td>
+          <td>${c.year_level ?? '-'}</td>
+          <td>${formatDateTimeThai(c.created_at)}</td>
+        </tr>
+      `).join('');
+    }
+  }
+
+  document.getElementById('export-csv').addEventListener('click', ()=>{
+    if(!lastCheckins.length){ showToast('ไม่มีข้อมูลให้ดาวน์โหลด', true); return; }
+    const rows = [['รหัสนิสิต','ชั้นปี','วันเวลาที่เช็คชื่อ']];
+    lastCheckins.forEach(c=> rows.push([c.student_id, c.year_level ?? '', formatDateTimeThai(c.created_at)]));
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type:'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const name = lastActivity ? lastActivity.name.replace(/[^a-zA-Zก-๙0-9]+/g,'_') : 'checkins';
+    a.download = `รายชื่อ_${name}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  /* ---------- Settings ---------- */
+  async function loadSettings(){
+    const { data } = await sb.from('settings').select('*').eq('id',1).maybeSingle();
+    document.getElementById('f-academic-year').value = (data && data.current_academic_year) || 2569;
+  }
+
+  document.getElementById('save-settings').addEventListener('click', async ()=>{
+    const year = parseInt(document.getElementById('f-academic-year').value, 10);
+    if(!year){ showToast('กรุณากรอกปีการศึกษาเป็นตัวเลข', true); return; }
+    const { error } = await sb.from('settings').upsert({ id:1, current_academic_year: year });
+    if(error){ showToast('บันทึกไม่สำเร็จ', true); return; }
+    showToast('บันทึกการตั้งค่าแล้ว');
+  });
+
+  /* ---------- Init ---------- */
+  async function initApp(){
+    await loadActivities();
+    await loadSettings();
+  }
+</script>
+</body>
+</html>

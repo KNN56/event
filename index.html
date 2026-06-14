@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>เช็คชื่อเข้าร่วมกิจกรรม | คณะนิติศาสตร์ มหาวิทยาลัยบูรพา</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&family=Noto+Serif+Thai:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --navy:#1B2A4A;
+    --navy-dark:#0E1830;
+    --navy-soft:#2C4373;
+    --gold:#C9A227;
+    --gold-soft:#E7CE7C;
+    --paper:#FBFAF7;
+    --ink:#1A1A2E;
+    --muted:#6B7280;
+    --line:#E4E2DA;
+    --success:#1E7145;
+    --success-bg:#EAF5EE;
+    --warn:#A9690A;
+    --warn-bg:#FCF1E1;
+    --danger:#B3261E;
+    --danger-bg:#FBEAE9;
+    --radius:18px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Noto Sans Thai', sans-serif;
+    color:var(--ink);
+    min-height:100vh;
+    background:
+      radial-gradient(1200px 800px at 85% -10%, rgba(201,162,39,0.10), transparent 60%),
+      linear-gradient(160deg, var(--navy-dark) 0%, var(--navy) 55%, var(--navy-soft) 100%);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:32px 16px 56px;
+  }
+
+  /* ---------- Header / Seal ---------- */
+  .hero{
+    text-align:center;
+    color:#fff;
+    max-width:520px;
+    width:100%;
+    margin-bottom:22px;
+  }
+  .seal{
+    width:74px;
+    height:74px;
+    margin:0 auto 14px;
+    border:1.5px solid var(--gold-soft);
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(255,255,255,0.04);
+  }
+  .seal svg{ width:40px; height:40px; }
+  .hero .eyebrow{
+    letter-spacing:.18em;
+    font-size:11px;
+    text-transform:uppercase;
+    color:var(--gold-soft);
+    margin:0 0 6px;
+    font-weight:600;
+  }
+  .hero h1{
+    font-family:'Noto Serif Thai', serif;
+    font-size:clamp(22px,5vw,30px);
+    font-weight:700;
+    margin:0 0 4px;
+    letter-spacing:.01em;
+  }
+  .hero p{
+    margin:0;
+    font-size:14px;
+    color:rgba(255,255,255,0.78);
+    font-weight:500;
+  }
+  .hero .rule{
+    width:64px;
+    height:2px;
+    margin:14px auto 0;
+    background:linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  /* ---------- Card ---------- */
+  .card{
+    background:var(--paper);
+    border-radius:var(--radius);
+    width:100%;
+    max-width:480px;
+    padding:28px 26px 30px;
+    box-shadow:0 24px 60px -20px rgba(8,16,36,0.55);
+    border:1px solid rgba(255,255,255,0.06);
+  }
+
+  /* Activity banner */
+  .activity-box{
+    border:1px solid var(--line);
+    border-left:4px solid var(--gold);
+    border-radius:12px;
+    padding:14px 16px;
+    margin-bottom:22px;
+    background:#fff;
+  }
+  .activity-box .tag{
+    display:inline-block;
+    font-size:11px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    font-weight:700;
+    color:var(--navy);
+    background:#EFF2F8;
+    border-radius:999px;
+    padding:3px 10px;
+    margin-bottom:8px;
+  }
+  .activity-box h2{
+    font-family:'Noto Serif Thai', serif;
+    font-size:17px;
+    margin:0 0 6px;
+    color:var(--navy);
+    line-height:1.4;
+  }
+  .activity-box .meta{
+    font-size:13.5px;
+    color:var(--muted);
+    line-height:1.7;
+    margin:0;
+  }
+  .activity-box .meta b{ color:var(--ink); font-weight:600; }
+  .activity-box.empty{
+    border-left-color:var(--muted);
+    text-align:center;
+    color:var(--muted);
+    font-size:14px;
+    padding:20px 16px;
+  }
+  .activity-box.empty h2{ color:var(--muted); font-size:15px; }
+
+  /* Form */
+  form{ display:flex; flex-direction:column; gap:14px; }
+  label{
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--navy);
+  }
+  input[type="text"]{
+    font-family:'Noto Sans Thai', sans-serif;
+    font-size:22px;
+    letter-spacing:.06em;
+    text-align:center;
+    font-weight:700;
+    color:var(--ink);
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    padding:14px 16px;
+    width:100%;
+    background:#fff;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  input[type="text"]::placeholder{
+    font-weight:500;
+    letter-spacing:.04em;
+    color:#B9BBC4;
+  }
+  input[type="text"]:focus{
+    outline:none;
+    border-color:var(--navy);
+    box-shadow:0 0 0 4px rgba(27,42,74,0.10);
+  }
+  button[type="submit"]{
+    font-family:'Noto Sans Thai', sans-serif;
+    font-size:16px;
+    font-weight:700;
+    color:#fff;
+    background:var(--navy);
+    border:none;
+    border-radius:12px;
+    padding:14px 18px;
+    cursor:pointer;
+    transition:background .15s, transform .1s;
+    letter-spacing:.02em;
+  }
+  button[type="submit"]:hover{ background:var(--navy-soft); }
+  button[type="submit"]:active{ transform:scale(0.99); }
+  button[type="submit"]:disabled{ opacity:.6; cursor:default; }
+
+  .hint{
+    font-size:12.5px;
+    color:var(--muted);
+    text-align:center;
+    margin-top:2px;
+  }
+  .field-error{
+    font-size:12.5px;
+    color:var(--danger);
+    text-align:center;
+    min-height:16px;
+  }
+
+  footer{
+    margin-top:26px;
+    color:rgba(255,255,255,0.55);
+    font-size:12px;
+    text-align:center;
+  }
+
+  /* ---------- Modal ---------- */
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(14,24,48,0.55);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+    z-index:50;
+    opacity:0; visibility:hidden;
+    transition:opacity .2s ease;
+  }
+  .overlay.show{ opacity:1; visibility:visible; }
+  .modal{
+    background:#fff;
+    border-radius:20px;
+    max-width:380px;
+    width:100%;
+    padding:30px 26px 26px;
+    text-align:center;
+    position:relative;
+    transform:translateY(14px) scale(.98);
+    transition:transform .25s ease;
+    box-shadow:0 30px 70px -25px rgba(8,16,36,0.6);
+  }
+  .overlay.show .modal{ transform:translateY(0) scale(1); }
+
+  .stamp{
+    width:84px; height:84px;
+    border-radius:50%;
+    border:3px solid currentColor;
+    display:flex; align-items:center; justify-content:center;
+    margin:0 auto 16px;
+    transform:rotate(-6deg);
+    position:relative;
+  }
+  .stamp::after{
+    content:'';
+    position:absolute; inset:6px;
+    border:1px dashed currentColor;
+    border-radius:50%;
+    opacity:.5;
+  }
+  .stamp svg{ width:38px; height:38px; }
+  .modal.success .stamp{ color:var(--success); }
+  .modal.already .stamp{ color:var(--warn); }
+  .modal.empty .stamp{ color:var(--muted); }
+  .modal.error .stamp{ color:var(--danger); }
+
+  .modal h3{
+    font-family:'Noto Serif Thai', serif;
+    font-size:19px;
+    margin:0 0 6px;
+    color:var(--navy);
+  }
+  .modal .sub{
+    font-size:13.5px;
+    color:var(--muted);
+    margin:0 0 16px;
+  }
+  .modal .detail-box{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px 16px;
+    text-align:left;
+    font-size:13.5px;
+    line-height:1.8;
+    margin-bottom:18px;
+  }
+  .modal .detail-box .activity-name{
+    font-weight:700;
+    color:var(--navy);
+    font-family:'Noto Serif Thai', serif;
+    font-size:15px;
+    margin-bottom:4px;
+  }
+  .modal .detail-box .row{ color:var(--muted); }
+  .modal .detail-box .row b{ color:var(--ink); font-weight:600; }
+
+  .modal button.close-btn{
+    width:100%;
+    font-family:'Noto Sans Thai', sans-serif;
+    font-size:15px;
+    font-weight:700;
+    color:#fff;
+    background:var(--navy);
+    border:none;
+    border-radius:12px;
+    padding:13px 16px;
+    cursor:pointer;
+  }
+  .modal button.close-btn:hover{ background:var(--navy-soft); }
+
+  @media (max-width:380px){
+    .card{ padding:22px 18px 24px; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="hero">
+    <div class="seal" aria-hidden="true">
+      <!-- scales of justice icon -->
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M32 6V52" stroke="#E7CE7C" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M32 12L12 16M32 12L52 16" stroke="#E7CE7C" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M12 16L6 28C6 31 9 33 12 33C15 33 18 31 18 28L12 16Z" stroke="#E7CE7C" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M52 16L46 28C46 31 49 33 52 33C55 33 58 31 58 28L52 16Z" stroke="#E7CE7C" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M22 56H42" stroke="#E7CE7C" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M32 52V56" stroke="#E7CE7C" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="32" cy="9" r="2.4" fill="#E7CE7C"/>
+      </svg>
+    </div>
+    <p class="eyebrow">ระบบเช็คชื่อเข้าร่วมกิจกรรม</p>
+    <h1>คณะนิติศาสตร์</h1>
+    <p>มหาวิทยาลัยบูรพา</p>
+    <div class="rule"></div>
+  </div>
+
+  <main class="card">
+    <div id="activity-banner" class="activity-box empty">
+      <h2>กำลังโหลดข้อมูลกิจกรรม...</h2>
+    </div>
+
+    <form id="checkin-form">
+      <div>
+        <label for="student-id">รหัสนิสิต</label>
+        <input
+          id="student-id"
+          name="student-id"
+          type="text"
+          inputmode="numeric"
+          autocomplete="off"
+          placeholder="กรอกรหัสนิสิต เช่น 6xxxxxxx"
+          maxlength="12"
+          required
+        >
+      </div>
+      <div class="field-error" id="field-error"></div>
+      <button type="submit" id="submit-btn">เช็คชื่อเข้าร่วมกิจกรรม</button>
+      <p class="hint">ระบบจะตรวจสอบว่าท่านเคยเช็คชื่อกิจกรรมนี้แล้วหรือไม่</p>
+    </form>
+  </main>
+
+  <footer>
+    คณะนิติศาสตร์ มหาวิทยาลัยบูรพา &middot; ระบบเช็คชื่อกิจกรรมนิสิต
+  </footer>
+
+  <!-- Modal -->
+  <div class="overlay" id="overlay">
+    <div class="modal" id="modal"></div>
+  </div>
+
+<script>
+  /* =========================================================
+     ตั้งค่า Supabase
+     ใส่ Project URL และ anon public key จากโปรเจกต์ Supabase ของท่าน
+     (Settings > API)
+  ========================================================= */
+  const SUPABASE_URL = "YOUR_SUPABASE_URL";
+  const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let activeActivity = null;
+  let currentAcademicYear = 2569; // ค่าเริ่มต้น พ.ศ. หากดึงค่าตั้งค่าไม่สำเร็จ
+
+  const banner = document.getElementById('activity-banner');
+  const form = document.getElementById('checkin-form');
+  const input = document.getElementById('student-id');
+  const fieldError = document.getElementById('field-error');
+  const submitBtn = document.getElementById('submit-btn');
+  const overlay = document.getElementById('overlay');
+  const modal = document.getElementById('modal');
+
+  const ICONS = {
+    success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
+    already: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l3 2"/></svg>',
+    empty:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>',
+    error:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 2.7 17.1A1.8 1.8 0 0 0 4.3 20h15.4a1.8 1.8 0 0 0 1.6-2.9L13.7 3.9a1.8 1.8 0 0 0-3.4 0Z"/></svg>'
+  };
+
+  function formatDateThai(dateStr){
+    if(!dateStr) return null;
+    try{
+      const d = new Date(dateStr + 'T00:00:00');
+      return d.toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' });
+    }catch(e){ return dateStr; }
+  }
+
+  function renderActivityBanner(){
+    if(!activeActivity){
+      banner.className = 'activity-box empty';
+      banner.innerHTML = `<h2>ยังไม่มีกิจกรรมที่เปิดให้เช็คชื่อในขณะนี้</h2>
+        <p style="margin:6px 0 0;font-size:13px;">กรุณารอประกาศจากคณะนิติศาสตร์</p>`;
+      return;
+    }
+    const dateText = formatDateThai(activeActivity.event_date);
+    banner.className = 'activity-box';
+    banner.innerHTML = `
+      <span class="tag">กิจกรรมที่เปิดเช็คชื่อ</span>
+      <h2>${escapeHtml(activeActivity.name)}</h2>
+      <p class="meta">
+        ${dateText ? `<b>วันที่:</b> ${dateText}<br>` : ''}
+        ${activeActivity.event_time ? `<b>เวลา:</b> ${escapeHtml(activeActivity.event_time)}<br>` : ''}
+        ${activeActivity.location ? `<b>สถานที่:</b> ${escapeHtml(activeActivity.location)}` : ''}
+      </p>`;
+  }
+
+  function escapeHtml(str){
+    if(str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  }
+
+  function calcYearLevel(studentId){
+    const prefix = parseInt(studentId.substring(0,2), 10);
+    if(isNaN(prefix)) return null;
+    const entryYear = 2500 + prefix; // พ.ศ. ปีที่เข้าศึกษา (สมมติรหัส 2 หลักแรกคือปี พ.ศ. ย่อ)
+    const level = currentAcademicYear - entryYear + 1;
+    if(level < 1) return null;
+    return level;
+  }
+
+  function yearLevelLabel(level){
+    if(level === null || level === undefined) return 'ไม่สามารถระบุได้';
+    if(level >= 1 && level <= 4) return `ปี ${level}`;
+    return `ปี ${level} (เกินหลักสูตรปกติ)`;
+  }
+
+  function showModal(type, html){
+    modal.className = 'modal ' + type;
+    modal.innerHTML = `
+      <div class="stamp">${ICONS[type]}</div>
+      ${html}
+      <button class="close-btn" id="modal-close">ปิดหน้าต่าง</button>
+    `;
+    overlay.classList.add('show');
+    document.getElementById('modal-close').addEventListener('click', closeModal);
+  }
+
+  function closeModal(){
+    overlay.classList.remove('show');
+    input.value = '';
+    input.focus();
+  }
+
+  overlay.addEventListener('click', (e)=>{
+    if(e.target === overlay) closeModal();
+  });
+
+  async function init(){
+    try{
+      const { data: settingsData } = await sb.from('settings').select('*').eq('id', 1).maybeSingle();
+      if(settingsData && settingsData.current_academic_year){
+        currentAcademicYear = settingsData.current_academic_year;
+      }
+    }catch(e){ /* ใช้ค่าเริ่มต้น */ }
+
+    try{
+      const { data: actData, error } = await sb
+        .from('activities')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending:false })
+        .limit(1)
+        .maybeSingle();
+      if(error) throw error;
+      activeActivity = actData || null;
+    }catch(e){
+      activeActivity = null;
+      banner.className = 'activity-box empty';
+      banner.innerHTML = `<h2>ไม่สามารถโหลดข้อมูลกิจกรรมได้</h2>
+        <p style="margin:6px 0 0;font-size:13px;">โปรดตรวจสอบการเชื่อมต่อ Supabase</p>`;
+      return;
+    }
+    renderActivityBanner();
+  }
+
+  form.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    fieldError.textContent = '';
+
+    const studentId = input.value.trim();
+    if(!/^[0-9]{6,12}$/.test(studentId)){
+      fieldError.textContent = 'กรุณากรอกรหัสนิสิตเป็นตัวเลข (6-12 หลัก)';
+      return;
+    }
+
+    if(!activeActivity){
+      showModal('empty', `
+        <h3>ยังไม่มีกิจกรรมที่เปิดให้เช็คชื่อ</h3>
+        <p class="sub">ขณะนี้คณะยังไม่ได้เปิดกิจกรรมสำหรับเช็คชื่อ กรุณารอประกาศ</p>
+      `);
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'กำลังตรวจสอบ...';
+
+    try{
+      const { data: existing, error: selErr } = await sb
+        .from('checkins')
+        .select('*')
+        .eq('student_id', studentId)
+        .eq('activity_id', activeActivity.id)
+        .maybeSingle();
+
+      if(selErr) throw selErr;
+
+      const dateText = formatDateThai(activeActivity.event_date);
+
+      if(existing){
+        showModal('already', `
+          <h3>ท่านได้เช็คชื่อกิจกรรมนี้แล้ว</h3>
+          <p class="sub">รหัสนิสิต ${escapeHtml(studentId)} เคยเข้าร่วมกิจกรรมนี้แล้ว</p>
+          <div class="detail-box">
+            <div class="activity-name">${escapeHtml(activeActivity.name)}</div>
+            ${dateText ? `<div class="row"><b>วันที่จัดกิจกรรม:</b> ${dateText}</div>` : ''}
+            ${activeActivity.event_time ? `<div class="row"><b>เวลา:</b> ${escapeHtml(activeActivity.event_time)}</div>` : ''}
+            ${activeActivity.location ? `<div class="row"><b>สถานที่:</b> ${escapeHtml(activeActivity.location)}</div>` : ''}
+          </div>
+        `);
+      } else {
+        const yearLevel = calcYearLevel(studentId);
+        const { error: insErr } = await sb.from('checkins').insert({
+          student_id: studentId,
+          activity_id: activeActivity.id,
+          year_level: yearLevel
+        });
+
+        if(insErr){
+          // unique constraint -> มีการเช็คชื่อซ้ำพร้อมกัน (race condition)
+          if(insErr.code === '23505'){
+            showModal('already', `
+              <h3>ท่านได้เช็คชื่อกิจกรรมนี้แล้ว</h3>
+              <p class="sub">รหัสนิสิต ${escapeHtml(studentId)} เคยเข้าร่วมกิจกรรมนี้แล้ว</p>
+              <div class="detail-box">
+                <div class="activity-name">${escapeHtml(activeActivity.name)}</div>
+                ${dateText ? `<div class="row"><b>วันที่จัดกิจกรรม:</b> ${dateText}</div>` : ''}
+                ${activeActivity.event_time ? `<div class="row"><b>เวลา:</b> ${escapeHtml(activeActivity.event_time)}</div>` : ''}
+              </div>
+            `);
+          } else {
+            throw insErr;
+          }
+        } else {
+          showModal('success', `
+            <h3>เช็คชื่อเข้าร่วมกิจกรรมสำเร็จ</h3>
+            <p class="sub">บันทึกข้อมูลรหัสนิสิต ${escapeHtml(studentId)} เรียบร้อยแล้ว</p>
+            <div class="detail-box">
+              <div class="activity-name">${escapeHtml(activeActivity.name)}</div>
+              ${dateText ? `<div class="row"><b>วันที่จัดกิจกรรม:</b> ${dateText}</div>` : ''}
+              ${activeActivity.event_time ? `<div class="row"><b>เวลา:</b> ${escapeHtml(activeActivity.event_time)}</div>` : ''}
+              ${activeActivity.location ? `<div class="row"><b>สถานที่:</b> ${escapeHtml(activeActivity.location)}</div>` : ''}
+              <div class="row"><b>ชั้นปี (ระบบประมวลผล):</b> ${escapeHtml(yearLevelLabel(yearLevel))}</div>
+            </div>
+          `);
+        }
+      }
+    }catch(err){
+      console.error(err);
+      showModal('error', `
+        <h3>เกิดข้อผิดพลาด</h3>
+        <p class="sub">ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง หรือแจ้งเจ้าหน้าที่</p>
+      `);
+    }finally{
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'เช็คชื่อเข้าร่วมกิจกรรม';
+    }
+  });
+
+  init();
+</script>
+</body>
+</html>
