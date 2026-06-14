@@ -359,8 +359,8 @@
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkbGNycXdhYmZ0b2h5YXN0d2FtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTM3MDQsImV4cCI6MjA5NzAyOTcwNH0.RHQf3lnV_8V_P0zmMOCjWmkPWue0vo_SyKP9cnLF3YM";
   const ADMIN_PASSWORD = "smolaw";
 
-  const sb = supabase.createClient(https://udlcrqwabftohyastwam.supabase.co/rest/v1/,eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkbGNycXdhYmZ0b2h5YXN0d2FtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTM3MDQsImV4cCI6MjA5NzAyOTcwNH0.RHQf3lnV_8V_P0zmMOCjWmkPWue0vo_SyKP9cnLF3YM);
-
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  
   /* ---------- Login ---------- */
   const loginWrap = document.getElementById('login-wrap');
   const app = document.getElementById('app');
