@@ -187,6 +187,24 @@
     font-family:inherit; font-size:14px; padding:10px 14px; border:1.5px solid var(--line);
     border-radius:10px; background:#fff; min-width:240px;
   }
+
+  /* activity tabs (stats panel) */
+  .activity-tabs{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .activity-tab{
+    border:1.5px solid var(--line); background:#fff; color:var(--navy);
+    border-radius:999px; padding:8px 16px; font-size:13px; font-weight:600;
+    cursor:pointer; display:flex; align-items:center; gap:6px;
+  }
+  .activity-tab:hover{ border-color:var(--navy-soft); }
+  .activity-tab.active{ background:var(--navy); color:#fff; border-color:var(--navy); }
+  .activity-tab .current-dot{
+    width:7px; height:7px; border-radius:50%; background:var(--gold); display:inline-block;
+  }
+  .row-delete-btn{
+    border:none; background:transparent; color:var(--danger); cursor:pointer;
+    font-size:12.5px; font-weight:700; padding:4px 8px; border-radius:6px;
+  }
+  .row-delete-btn:hover{ background:var(--danger-bg); }
   .stat-cards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:12px; margin-bottom:20px; }
   .stat-card{
     border:1px solid var(--line); border-radius:12px; padding:16px; text-align:center; background:#fff;
@@ -306,11 +324,11 @@
       <!-- Stats panel -->
       <div class="panel" id="panel-stats">
         <h2 class="section-title">สถิติผู้เข้าร่วมกิจกรรม</h2>
-        <p class="section-sub">เลือกกิจกรรมเพื่อดูจำนวนผู้เข้าร่วม แยกตามชั้นปี</p>
+        <p class="section-sub">เลือกแท็บกิจกรรมเพื่อดูจำนวนผู้เข้าร่วม แยกตามชั้นปี และรายชื่อผู้เช็คชื่อของกิจกรรมนั้น</p>
+
+        <div class="activity-tabs" id="stats-activity-tabs"></div>
+
         <div class="stats-row">
-          <div class="select-wrap">
-            <select id="stats-activity-select"></select>
-          </div>
           <button class="btn btn-outline btn-sm" id="export-csv">ดาวน์โหลดรายชื่อ (CSV)</button>
         </div>
 
@@ -320,7 +338,7 @@
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>ลำดับ</th><th>รหัสนิสิต</th><th>ชั้นปี</th><th>วันเวลาที่เช็คชื่อ</th></tr>
+              <tr><th>ลำดับ</th><th>ชื่อ-นามสกุล</th><th>รหัสนิสิต</th><th>ชั้นปี</th><th>วันเวลาที่เช็คชื่อ</th><th></th></tr>
             </thead>
             <tbody id="checkins-tbody"></tbody>
           </table>
@@ -437,7 +455,7 @@
     if(error){ showToast('โหลดข้อมูลกิจกรรมไม่สำเร็จ', true); return; }
     activitiesCache = data || [];
     renderActivityList();
-    populateStatsSelect();
+    renderStatsTabs();
   }
 
   function renderActivityList(){
@@ -510,33 +528,50 @@
   });
 
   /* ---------- Stats ---------- */
-  function populateStatsSelect(){
-    const sel = document.getElementById('stats-activity-select');
+  let selectedStatsActivityId = null;
+
+  function renderStatsTabs(){
+    const wrap = document.getElementById('stats-activity-tabs');
     if(activitiesCache.length === 0){
-      sel.innerHTML = '<option value="">ไม่มีกิจกรรม</option>';
+      wrap.innerHTML = '<div class="empty-note">ยังไม่มีกิจกรรมในระบบ</div>';
+      selectedStatsActivityId = null;
       return;
     }
-    sel.innerHTML = activitiesCache.map(a =>
-      `<option value="${a.id}">${escapeHtml(a.name)}${a.is_active ? ' (ปัจจุบัน)' : ''}</option>`
-    ).join('');
-    const activeOne = activitiesCache.find(a => a.is_active);
-    if(activeOne) sel.value = activeOne.id;
-  }
 
-  document.getElementById('stats-activity-select').addEventListener('change', loadStats);
+    // ถ้ายังไม่ได้เลือก หรือกิจกรรมที่เลือกไว้ถูกลบไปแล้ว ให้เลือกกิจกรรมปัจจุบัน (หรืออันแรก) เป็นค่าเริ่มต้น
+    if(!selectedStatsActivityId || !activitiesCache.find(a => a.id === selectedStatsActivityId)){
+      const activeOne = activitiesCache.find(a => a.is_active);
+      selectedStatsActivityId = (activeOne || activitiesCache[0]).id;
+    }
+
+    wrap.innerHTML = activitiesCache.map(a => `
+      <button type="button" class="activity-tab ${a.id === selectedStatsActivityId ? 'active' : ''}" data-id="${a.id}">
+        ${a.is_active ? '<span class="current-dot" title="กิจกรรมปัจจุบัน"></span>' : ''}
+        ${escapeHtml(a.name)}
+      </button>
+    `).join('');
+
+    wrap.querySelectorAll('.activity-tab').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        selectedStatsActivityId = btn.dataset.id;
+        wrap.querySelectorAll('.activity-tab').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        loadStats();
+      });
+    });
+  }
 
   let lastCheckins = [];
   let lastActivity = null;
 
   async function loadStats(){
-    const sel = document.getElementById('stats-activity-select');
     const cards = document.getElementById('stat-cards');
     const tbody = document.getElementById('checkins-tbody');
 
     if(activitiesCache.length === 0){
       await loadActivities();
     }
-    const activityId = sel.value;
+    const activityId = selectedStatsActivityId;
     if(!activityId){
       cards.innerHTML = '<div class="empty-note" style="grid-column:1/-1;">ยังไม่มีกิจกรรมในระบบ</div>';
       tbody.innerHTML = '';
@@ -572,23 +607,45 @@
     `;
 
     if(lastCheckins.length === 0){
-      tbody.innerHTML = '<tr><td colspan="4" class="empty-note">ยังไม่มีผู้เช็คชื่อกิจกรรมนี้</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-note">ยังไม่มีผู้เช็คชื่อกิจกรรมนี้</td></tr>';
     } else {
-      tbody.innerHTML = lastCheckins.map((c,i)=> `
+      tbody.innerHTML = lastCheckins.map((c,i)=> {
+        const fullName = [c.first_name, c.last_name].filter(Boolean).join(' ') || '-';
+        return `
         <tr>
           <td>${i+1}</td>
+          <td>${escapeHtml(fullName)}</td>
           <td>${escapeHtml(c.student_id)}</td>
           <td>${c.year_level ?? '-'}</td>
           <td>${formatDateTimeThai(c.created_at)}</td>
+          <td><button class="row-delete-btn" data-id="${c.id}">ลบ</button></td>
         </tr>
-      `).join('');
+      `;
+      }).join('');
+
+      tbody.querySelectorAll('.row-delete-btn').forEach(btn=>{
+        btn.addEventListener('click', ()=> deleteCheckin(btn.dataset.id));
+      });
     }
+  }
+
+  async function deleteCheckin(id){
+    if(!confirm('ยืนยันการลบรายชื่อผู้เข้าร่วมรายนี้ออกจากกิจกรรม?')) return;
+    const { error } = await sb.from('checkins').delete().eq('id', id);
+    if(error){ showToast('ลบไม่สำเร็จ', true); return; }
+    showToast('ลบรายชื่อแล้ว');
+    await loadStats();
   }
 
   document.getElementById('export-csv').addEventListener('click', ()=>{
     if(!lastCheckins.length){ showToast('ไม่มีข้อมูลให้ดาวน์โหลด', true); return; }
-    const rows = [['รหัสนิสิต','ชั้นปี','วันเวลาที่เช็คชื่อ']];
-    lastCheckins.forEach(c=> rows.push([c.student_id, c.year_level ?? '', formatDateTimeThai(c.created_at)]));
+    const rows = [['ชื่อ-นามสกุล','รหัสนิสิต','ชั้นปี','วันเวลาที่เช็คชื่อ']];
+    lastCheckins.forEach(c=> rows.push([
+      [c.first_name, c.last_name].filter(Boolean).join(' '),
+      c.student_id,
+      c.year_level ?? '',
+      formatDateTimeThai(c.created_at)
+    ]));
     const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type:'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);

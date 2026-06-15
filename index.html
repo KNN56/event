@@ -147,6 +147,14 @@
 
   /* Form */
   form{ display:flex; flex-direction:column; gap:14px; }
+  .name-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+  @media (max-width:380px){
+    .name-row{ grid-template-columns:1fr; }
+  }
   label{
     font-size:13.5px;
     font-weight:600;
@@ -337,6 +345,30 @@
     </div>
 
     <form id="checkin-form">
+      <div class="name-row">
+        <div>
+          <label for="first-name">ชื่อ</label>
+          <input
+            id="first-name"
+            name="first-name"
+            type="text"
+            autocomplete="off"
+            placeholder="ชื่อ"
+            required
+          >
+        </div>
+        <div>
+          <label for="last-name">นามสกุล</label>
+          <input
+            id="last-name"
+            name="last-name"
+            type="text"
+            autocomplete="off"
+            placeholder="นามสกุล"
+            required
+          >
+        </div>
+      </div>
       <div>
         <label for="student-id">รหัสนิสิต</label>
         <input
@@ -381,6 +413,8 @@
 
   const banner = document.getElementById('activity-banner');
   const form = document.getElementById('checkin-form');
+  const firstNameInput = document.getElementById('first-name');
+  const lastNameInput = document.getElementById('last-name');
   const input = document.getElementById('student-id');
   const fieldError = document.getElementById('field-error');
   const submitBtn = document.getElementById('submit-btn');
@@ -456,8 +490,10 @@
 
   function closeModal(){
     overlay.classList.remove('show');
+    firstNameInput.value = '';
+    lastNameInput.value = '';
     input.value = '';
-    input.focus();
+    firstNameInput.focus();
   }
 
   overlay.addEventListener('click', (e)=>{
@@ -496,7 +532,14 @@
     e.preventDefault();
     fieldError.textContent = '';
 
+    const firstName = firstNameInput.value.trim();
+    const lastName = lastNameInput.value.trim();
     const studentId = input.value.trim();
+
+    if(!firstName || !lastName){
+      fieldError.textContent = 'กรุณากรอกชื่อและนามสกุล';
+      return;
+    }
     if(!/^[0-9]{6,12}$/.test(studentId)){
       fieldError.textContent = 'กรุณากรอกรหัสนิสิตเป็นตัวเลข (6-12 หลัก)';
       return;
@@ -526,9 +569,10 @@
       const dateText = formatDateThai(activeActivity.event_date);
 
       if(existing){
+        const existingName = [existing.first_name, existing.last_name].filter(Boolean).join(' ');
         showModal('already', `
           <h3>ท่านได้เช็คชื่อกิจกรรมนี้แล้ว</h3>
-          <p class="sub">รหัสนิสิต ${escapeHtml(studentId)} เคยเข้าร่วมกิจกรรมนี้แล้ว</p>
+          <p class="sub">${existingName ? escapeHtml(existingName) + ' ' : ''}(รหัสนิสิต ${escapeHtml(studentId)}) เคยเข้าร่วมกิจกรรมนี้แล้ว</p>
           <div class="detail-box">
             <div class="activity-name">${escapeHtml(activeActivity.name)}</div>
             ${dateText ? `<div class="row"><b>วันที่จัดกิจกรรม:</b> ${dateText}</div>` : ''}
@@ -540,6 +584,8 @@
         const yearLevel = calcYearLevel(studentId);
         const { error: insErr } = await sb.from('checkins').insert({
           student_id: studentId,
+          first_name: firstName,
+          last_name: lastName,
           activity_id: activeActivity.id,
           year_level: yearLevel
         });
@@ -549,7 +595,7 @@
           if(insErr.code === '23505'){
             showModal('already', `
               <h3>ท่านได้เช็คชื่อกิจกรรมนี้แล้ว</h3>
-              <p class="sub">รหัสนิสิต ${escapeHtml(studentId)} เคยเข้าร่วมกิจกรรมนี้แล้ว</p>
+              <p class="sub">${escapeHtml(firstName)} ${escapeHtml(lastName)} (รหัสนิสิต ${escapeHtml(studentId)}) เคยเข้าร่วมกิจกรรมนี้แล้ว</p>
               <div class="detail-box">
                 <div class="activity-name">${escapeHtml(activeActivity.name)}</div>
                 ${dateText ? `<div class="row"><b>วันที่จัดกิจกรรม:</b> ${dateText}</div>` : ''}
@@ -562,7 +608,7 @@
         } else {
           showModal('success', `
             <h3>เช็คชื่อเข้าร่วมกิจกรรมสำเร็จ</h3>
-            <p class="sub">บันทึกข้อมูลรหัสนิสิต ${escapeHtml(studentId)} เรียบร้อยแล้ว</p>
+            <p class="sub">บันทึกข้อมูลของ ${escapeHtml(firstName)} ${escapeHtml(lastName)} (รหัสนิสิต ${escapeHtml(studentId)}) เรียบร้อยแล้ว</p>
             <div class="detail-box">
               <div class="activity-name">${escapeHtml(activeActivity.name)}</div>
               ${dateText ? `<div class="row"><b>วันที่จัดกิจกรรม:</b> ${dateText}</div>` : ''}
