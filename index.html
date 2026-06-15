@@ -184,6 +184,36 @@
     border-color:var(--navy);
     box-shadow:0 0 0 4px rgba(27,42,74,0.10);
   }
+  .optional-tag{
+    color:var(--muted);
+    font-weight:500;
+    font-size:12px;
+  }
+  select#food-allergy,
+  #food-allergy-other{
+    font-family:'Noto Sans Thai', sans-serif;
+    font-size:15px;
+    font-weight:500;
+    letter-spacing:normal;
+    text-align:left;
+    color:var(--ink);
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    padding:12px 14px;
+    width:100%;
+    background:#fff;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  select#food-allergy:focus,
+  #food-allergy-other:focus{
+    outline:none;
+    border-color:var(--navy);
+    box-shadow:0 0 0 4px rgba(27,42,74,0.10);
+  }
+  #food-allergy-other::placeholder{
+    color:#B9BBC4;
+    font-weight:400;
+  }
   button[type="submit"]{
     font-family:'Noto Sans Thai', sans-serif;
     font-size:16px;
@@ -382,6 +412,25 @@
           required
         >
       </div>
+      <div>
+        <label for="food-allergy">ข้อมูลการแพ้อาหาร <span class="optional-tag">(ไม่กรอกก็ได้)</span></label>
+        <select id="food-allergy">
+          <option value="">ไม่มีข้อมูลการแพ้อาหาร</option>
+          <option value="อาหารทะเล/กุ้ง/ปู/หอย">อาหารทะเล / กุ้ง / ปู / หอย</option>
+          <option value="นมและผลิตภัณฑ์จากนม">นมและผลิตภัณฑ์จากนม</option>
+          <option value="ไข่">ไข่</option>
+          <option value="ถั่ว/นัตส์">ถั่ว / นัตส์</option>
+          <option value="แป้งสาลี/กลูเตน">แป้งสาลี / กลูเตน</option>
+          <option value="other">อื่นๆ (โปรดระบุ)</option>
+        </select>
+        <input
+          id="food-allergy-other"
+          type="text"
+          autocomplete="off"
+          placeholder="โปรดระบุสิ่งที่แพ้"
+          style="margin-top:10px; display:none;"
+        >
+      </div>
       <div class="field-error" id="field-error"></div>
       <button type="submit" id="submit-btn">เช็คชื่อเข้าร่วมกิจกรรม</button>
       <p class="hint">ระบบจะตรวจสอบว่าท่านเคยเช็คชื่อกิจกรรมนี้แล้วหรือไม่</p>
@@ -416,10 +465,21 @@
   const firstNameInput = document.getElementById('first-name');
   const lastNameInput = document.getElementById('last-name');
   const input = document.getElementById('student-id');
+  const foodAllergySelect = document.getElementById('food-allergy');
+  const foodAllergyOther = document.getElementById('food-allergy-other');
   const fieldError = document.getElementById('field-error');
   const submitBtn = document.getElementById('submit-btn');
   const overlay = document.getElementById('overlay');
   const modal = document.getElementById('modal');
+
+  foodAllergySelect.addEventListener('change', ()=>{
+    if(foodAllergySelect.value === 'other'){
+      foodAllergyOther.style.display = 'block';
+    } else {
+      foodAllergyOther.style.display = 'none';
+      foodAllergyOther.value = '';
+    }
+  });
 
   const ICONS = {
     success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
@@ -493,6 +553,9 @@
     firstNameInput.value = '';
     lastNameInput.value = '';
     input.value = '';
+    foodAllergySelect.value = '';
+    foodAllergyOther.value = '';
+    foodAllergyOther.style.display = 'none';
     firstNameInput.focus();
   }
 
@@ -545,6 +608,16 @@
       return;
     }
 
+    let foodAllergy = foodAllergySelect.value;
+    if(foodAllergy === 'other'){
+      foodAllergy = foodAllergyOther.value.trim();
+      if(!foodAllergy){
+        fieldError.textContent = 'กรุณาระบุสิ่งที่แพ้อาหาร หรือเลือก "ไม่มีข้อมูลการแพ้อาหาร"';
+        return;
+      }
+    }
+    foodAllergy = foodAllergy || null; // ไม่บังคับกรอก
+
     if(!activeActivity){
       showModal('empty', `
         <h3>ยังไม่มีกิจกรรมที่เปิดให้เช็คชื่อ</h3>
@@ -586,6 +659,7 @@
           student_id: studentId,
           first_name: firstName,
           last_name: lastName,
+          food_allergy: foodAllergy,
           activity_id: activeActivity.id,
           year_level: yearLevel
         });
@@ -615,6 +689,7 @@
               ${activeActivity.event_time ? `<div class="row"><b>เวลา:</b> ${escapeHtml(activeActivity.event_time)}</div>` : ''}
               ${activeActivity.location ? `<div class="row"><b>สถานที่:</b> ${escapeHtml(activeActivity.location)}</div>` : ''}
               <div class="row"><b>ชั้นปี (ระบบประมวลผล):</b> ${escapeHtml(yearLevelLabel(yearLevel))}</div>
+              ${foodAllergy ? `<div class="row"><b>ข้อมูลการแพ้อาหาร:</b> ${escapeHtml(foodAllergy)}</div>` : ''}
             </div>
           `);
         }

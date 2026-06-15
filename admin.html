@@ -338,7 +338,7 @@
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>ลำดับ</th><th>ชื่อ-นามสกุล</th><th>รหัสนิสิต</th><th>ชั้นปี</th><th>วันเวลาที่เช็คชื่อ</th><th></th></tr>
+              <tr><th>ลำดับ</th><th>ชื่อ-นามสกุล</th><th>รหัสนิสิต</th><th>ชั้นปี</th><th>การแพ้อาหาร</th><th>วันเวลาที่เช็คชื่อ</th><th></th></tr>
             </thead>
             <tbody id="checkins-tbody"></tbody>
           </table>
@@ -607,7 +607,7 @@
     `;
 
     if(lastCheckins.length === 0){
-      tbody.innerHTML = '<tr><td colspan="6" class="empty-note">ยังไม่มีผู้เช็คชื่อกิจกรรมนี้</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-note">ยังไม่มีผู้เช็คชื่อกิจกรรมนี้</td></tr>';
     } else {
       tbody.innerHTML = lastCheckins.map((c,i)=> {
         const fullName = [c.first_name, c.last_name].filter(Boolean).join(' ') || '-';
@@ -617,6 +617,7 @@
           <td>${escapeHtml(fullName)}</td>
           <td>${escapeHtml(c.student_id)}</td>
           <td>${c.year_level ?? '-'}</td>
+          <td>${escapeHtml(c.food_allergy) || '-'}</td>
           <td>${formatDateTimeThai(c.created_at)}</td>
           <td><button class="row-delete-btn" data-id="${c.id}">ลบ</button></td>
         </tr>
@@ -639,11 +640,12 @@
 
   document.getElementById('export-csv').addEventListener('click', ()=>{
     if(!lastCheckins.length){ showToast('ไม่มีข้อมูลให้ดาวน์โหลด', true); return; }
-    const rows = [['ชื่อ-นามสกุล','รหัสนิสิต','ชั้นปี','วันเวลาที่เช็คชื่อ']];
+    const rows = [['ชื่อ-นามสกุล','รหัสนิสิต','ชั้นปี','การแพ้อาหาร','วันเวลาที่เช็คชื่อ']];
     lastCheckins.forEach(c=> rows.push([
       [c.first_name, c.last_name].filter(Boolean).join(' '),
       c.student_id,
       c.year_level ?? '',
+      c.food_allergy || '',
       formatDateTimeThai(c.created_at)
     ]));
     const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
